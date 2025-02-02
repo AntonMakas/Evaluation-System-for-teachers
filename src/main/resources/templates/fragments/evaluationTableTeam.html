@@ -1,0 +1,44 @@
+<div id="teamTableContainer" th:fragment="evaluationTableTeam">
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <tbody>
+                <tr th:each="group : ${evaluationData}">
+                    <td th:text="${group.groupName}"></td>
+
+                    <td colspan="4">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Criterion Name</th>
+                                    <th>Points</th>
+                                    <th>Max Points</th>
+                                    <th>Feedback</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="criterion : ${group.criteria}">
+                                    <td th:text="${criterion.criteriaName}"></td>
+                                    <td>
+                                        <input type="number" class="form-control" 
+                                               th:value="${criterion.pointsObtained != null ? criterion.pointsObtained : ''}" 
+                                               th:placeholder="${criterion.pointsObtained == null ? 'N/A' : ''}" 
+                                               th:max="${criterion.maxPoints}" 
+                                               th:min="0"
+                                               oninput="checkMaxValue(this)"
+                                               th:onchange="updateEvaluation([[${criterion.criteriaId}]], [[${criterion.type}]], [[${criterion.evaluationId}]],[[${criterion.teamId}]],[[${criterion.studentId}]], 'points', this.value)">
+                                    </td>
+                                    <td th:text="${criterion.maxPoints}"></td>
+                                    <td>
+                                        <input type="text" class="form-control" 
+                                               th:value="${criterion.feedback != null ? criterion.feedback : ''}" 
+                                               th:onchange="updateEvaluation([[${criterion.criteriaId}]], [[${criterion.type}]], [[${criterion.evaluationId}]],[[${criterion.teamId}]],[[${criterion.studentId}]], 'feedback', this.value)">
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

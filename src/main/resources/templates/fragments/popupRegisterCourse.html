@@ -1,0 +1,37 @@
+<div th:fragment="popupRegisterCourse">
+    <!-- Modal -->
+    <div class="modal fade" id="registerCourseModal" tabindex="-1" aria-labelledby="registerCourseModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <!-- Modal Header -->
+                <div class="modal-header">
+                    <h5 class="modal-title" id="registerCourseModalLabel">Register for a Course</h5>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="modal-body">
+                    <form id="registerCourseForm" th:action="@{/course/registerToCourse}" method="post" class="mb-3">
+                        <div class="mb-3">
+                            <label for="courseSelect" class="form-label">Select a Course <span class="text-danger">*</span></label>
+                            <select id="courseSelect" name="courseId" class="form-select" required>
+                                <option value="" disabled selected>Select a Course</option>
+                                <!-- Options will be dynamically loaded -->
+                            </select>
+                            <input type="hidden" id="teacherId" th:value="${teacherId}" name="teacherId">
+                        </div>
+                    </form>
+                    <p class="text-muted mt-3" style="margin-bottom:-0.5rem">
+                        <span class="text-danger">* mandatory fields</span>
+                    </p>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" form="registerCourseForm">Register</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

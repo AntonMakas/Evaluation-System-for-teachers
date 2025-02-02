@@ -1,0 +1,28 @@
+<div th:fragment="statisticsModal">
+    <div class="modal fade" id="statisticsModal" tabindex="-1" aria-labelledby="statisticsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="statisticsModalLabel">Activity Statistics</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div>
+                        <div th:each="stat : ${statistics}">
+                            <h5 th:text="${stat.teacherLogin}"></h5>
+                            <p style="margin-bottom:0rem"><strong>Total Hours:</strong> <span th:text="${stat.totalHours}"></span></p>
+                            <p style="margin-bottom:0rem"><strong>Total Students Graded:</strong> <span th:text="${stat.totalStudents}"></span></p>
+                            <ul>
+                                <li th:each="report : ${stat.reports}" th:text="${report.description} + ' - ' + ${report.hours} + ' hours, ' + ${report.nbStudents} + ' students'"></li>
+                            </ul>
+                            <hr>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+    <div th:fragment="addTaskModal">
+        <div class="modal fade" id="addTaskModal" tabindex="-1" aria-labelledby="addTaskModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addTaskModalLabel">Add New Task</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addTaskForm" th:action="@{/task/add}" method="post">
+                            <input type="hidden" name="courseId" th:value="${course.id}" />
+
+                            <div class="mb-3">
+                                <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+                                <input type="text" id="title" name="title" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description <span class="text-danger">*</span></label>
+                                <textarea id="description" name="description" class="form-control" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="type" class="form-label">Type <span class="text-danger">*</span></label>
+                                <select name="type" class="form-control" required>
+                                    <option value="" disabled selected>Select a type</option>
+                                    <option th:each="type : ${taskTypes}" th:value="${type}" th:text="${type}"></option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="taskOrder" class="form-label">Order</label>
+                                <input type="number" id="taskOrder" name="taskOrder" class="form-control">
+                            </div>
+                            <div class="mb-3">
+                                <label for="activityId" class="form-label">Related Activity</label>
+                                <select id="activityId" name="activityId" class="form-control">
+                                    <option value="">None</option>
+                                    <option th:each="activity : ${activities}" th:value="${activity.id}" th:text="${activity.name}"></option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="startDate" class="form-label">Start Date</label>
+                                <input type="datetime-local" name="startDate" class="form-control">
+                            </div>
+                            <div class="mb-3">
+                                <label for="endDate" class="form-label">End Date</label>
+                                <input type="datetime-local" name="endDate" class="form-control">
+                            </div>
+                            <p class="text-muted mt-3"><span class="text-danger">* mandatory fields</span></p>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary" form="addTaskForm" id="saveTaskButton" disabled>Save Task</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:fragment="updateTaskModal">
+        <div th:each="task : ${tasks}" class="modal fade" th:id="'editTaskModal-' + ${task.id}" tabindex="-1" aria-labelledby="editTaskModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" th:text="'Edit Task - ' + ${task.title}"></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form th:action="@{/task/edit/{id}(id=${task.id})}" method="post">
+                            <div class="mb-3">
+                                <label for="title" class="form-label">Title</label>
+                                <input type="text" name="title" class="form-control" th:value="${task.title}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea name="description" class="form-control" th:text="${task.description}"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="type" class="form-label">Type</label>
+                                <select name="type" class="form-control" required>
+                                    <option th:each="type : ${taskTypes}" th:value="${type}" th:text="${type}" th:selected="${type == task.type}"></option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="taskOrder" class="form-label">Order</label>
+                                <input type="number" name="taskOrder" class="form-control" th:value="${task.order}">
+                            </div>
+                            <div class="mb-3">
+                                <label for="activityId" class="form-label">Related Activity</label>
+                                <select name="activityId" class="form-control">
+                                    <option value="">None</option>
+                                    <option th:each="activity : ${activities}" th:value="${activity.id}" th:text="${activity.name}" th:selected="${task.activity?.id == activity.id}"></option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="startDate" class="form-label">Start Date</label>
+                                <input type="datetime-local" name="startDate" class="form-control" th:value="${task.startDate}">
+                            </div>
+                            <div class="mb-3">
+                                <label for="endDate" class="form-label">End Date</label>
+                                <input type="datetime-local" name="endDate" class="form-control" th:value="${task.endDate}">
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-primary">Update Task</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</html>

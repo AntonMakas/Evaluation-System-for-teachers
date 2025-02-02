@@ -1,0 +1,4 @@
+task_order,id,title,type,activity_id,description,start_date,end_date,main_teacher_idx
+0,0,evaluate 1st lecture,0,0,this is a task,11/9/2024,11/1/2025,0
+1,1,evaluate 2ed lecture,1,1,this is a task,11/9/2024,11/1/2025,0
+2,2,evaluate 3rd lecture,1,0,this is a task,11/9/2024,11/1/2025,0

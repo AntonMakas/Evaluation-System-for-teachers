@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluation Table</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="/style/evaluation.css">
+    <link rel="stylesheet" href="/style/header.css">
+    <link rel="stylesheet" href="/style/footer.css">
+    <link rel="stylesheet" href="/style/popup.css">
+
+</head>
+<body>
+    <div th:replace="~{fragments/header :: header}"></div>
+    
+    <div class="container">
+        <div id="notification-popup" class="notification-popup hidden">
+            <i id="notification-icon" class=""></i>
+            <span id="notification-message"></span>
+        </div>
+        
+        <h1 class="text-center mb-4">Evaluation of <span th:text="${activityType}"></span></h1>
+
+        <!-- SELECT CRITERION -->
+        <div class="row mb-4">
+            <label id="activityId" class="d-none" th:text=${activityId}></label>
+
+            <!-- SELECT GROUP AND CRITERION -->
+            <div class="col-md-4 mb-2">
+                <label for="groupDropdown" class="form-label">Evaluate a Criteria</label>
+                <select id="groupDropdown" class="form-select" th:onchange="loadCriteria()">
+                    <option selected disabled>Select a Group</option>
+                    <option th:each="group : ${groups}" th:value="${group.id}" th:text="${group.name}"></option>
+                </select>
+            </div>
+            <div class="col-md-4 mb-2">
+                <label for="criterionDropdown" class="form-label" style="opacity:0">N/A</label>
+                <select id="criterionDropdown" class="form-select" th:onchange="loadCriterionTable()">
+                    <option selected disabled>Select a Criterion</option>
+                    <option th:each="criterion : ${criteria}" 
+                            th:value="${criterion.id}" 
+                            th:text="${criterion.name}" 
+                            th:attr="data-type=${criterion.type}">
+                    </option>
+                </select>
+            </div>
+
+            <div class="col-md-4 mb-2 d-flex align-items-end">
+                <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#reportModal" id="writeReportBtn">Write Report</button>
+            </div>
+            <div th:replace="fragments/popupReport :: popupReport"></div>
+        </div>
+
+        <!-- SELECT TEAM AND STUDENT -->
+        <div class="row mb-4">
+            <!-- SELECT TEAM -->
+            <div class="col-md-4 mb-2">
+                <label for="teamDropdown" class="form-label">Evaluate a Team</label>
+                <select id="teamDropdown" class="form-select" th:onchange="loadTeamTable()">
+                    <option selected disabled>Select a Team</option>
+                    <option th:each="team : ${teams}" 
+                            th:value="${team.id}" 
+                            th:text="${team.name}">
+                    </option>
+                </select>
+            </div>
+
+            <!-- SELECT STUDENT -->
+            <div class="col-md-4 mb-2">
+                <label for="studentDropdown" class="form-label">Evaluate a Student</label>
+                <select id="studentDropdown" class="form-select" th:onchange="loadStudentTable()">
+                    <option selected disabled>Select a Student</option>
+                    <option th:each="student : ${students}" 
+                            th:value="${student.id}" 
+                            th:text="${student.firstName + ' ' + student.lastName}">
+                    </option>
+                </select>
+            </div>
+
+            <!-- SEND ASSESSMENT BUTTONS AND DROPDOWN -->
+            <div class="col-md-4 mb-2 d-flex flex-column align-items-stretch">
+                <button type="button" class="btn btn-success w-100 d-none" id="sendAssessmentGroupBtn">
+                    Send Assessment Group
+                </button>
+                <button type="button" class="btn btn-success w-100 d-none" id="sendAssessmentTeamBtn">
+                    Send Assessment Team
+                </button>
+
+                <button type="button" class="btn btn-success w-100 d-none" id="sendAssessmentStudentBtn">
+                    Send Assessment Student
+                </button>
+
+                <div class="mt-2 d-none" id="groupDropdownWrapper">
+                    <select id="groupSelectAssDropdown" class="form-select w-100">
+                        <option selected disabled th:value="-1">Select Group for Sending Assessment</option>
+                        <option th:each="group : ${groups}" 
+                                th:value="${group.id}" 
+                                th:text="${group.name}">
+                        </option>
+                    </select>
+                </div>
+            </div>
+
+        </div>
+
+        <h2 id="tableName" class="text-center mt-4 d-none"></h2>
+        <div id="evaluationTableContainer">
+        </div>
+
+        
+    </div>
+        
+    <div th:replace="~{fragments/footer :: footer}"></div>
+    
+<script th:inline="javascript">
+    
+    document.getElementById('sendAssessmentGroupBtn').addEventListener('click', () => {
+        verifyEvaluations('group');
+    });
+
+    document.getElementById('sendAssessmentTeamBtn').addEventListener('click', () => {
+        verifyEvaluations('team');
+    });
+
+    document.getElementById('sendAssessmentStudentBtn').addEventListener('click', () => {
+        verifyEvaluations('student');
+    });
+    
+    document.addEventListener("DOMContentLoaded", function () {
+        const taskSelect = document.getElementById("taskSelect");
+        const description = document.getElementById("description");
+        const sendButton = document.getElementById("sendButton");
+
+        function validateForm() {
+            const isTaskSelected = taskSelect.value !== "";
+            const isDescriptionFilled = description.value.trim() !== "";
+            sendButton.disabled = !(isTaskSelected && isDescriptionFilled);
+        }
+
+        taskSelect.addEventListener("change", validateForm);
+        description.addEventListener("input", validateForm);
+        
+        const message = /*[[${notificationMessage}]]*/ '';
+        const type = /*[[${notificationType}]]*/ 'info';
+
+        if (message) {
+            showNotification(message, type);
+        }
+    });
+    
+    const criterionDropdown = document.getElementById('criterionDropdown');
+    const groupDropdown = document.getElementById('groupDropdown');
+    const teamDropdown = document.getElementById('teamDropdown');
+    const groupDropdownWrapper = document.getElementById('groupSelectAssDropdown');
+    const studentDropdown = document.getElementById('studentDropdown');
+    const tableContainer = document.getElementById('evaluationTableContainer');
+    
+    function showNotification(message, type = "info") {
+        const popup = document.getElementById('notification-popup');
+        const icon = document.getElementById('notification-icon');
+        const messageSpan = document.getElementById('notification-message');
+
+        // Set content
+        messageSpan.textContent = message;
+
+        // Set styles and ICONS
+        popup.className = `notification-popup visible ${type}`;
+        icon.className = {
+            success: 'bi bi-check-circle',
+            error: 'bi bi-x-circle',
+            info: 'bi bi-info-circle'
+        }[type] || 'bi bi-info-circle';
+
+        // Display popup
+        setTimeout(() => {
+            popup.classList.remove('visible');
+            popup.classList.add('hidden');
+        }, 5000);
+    }
+        
+    /**
+     * For the specified group in the groupDropdown, laods the criteria associated
+     * to it in the criterionDropdown. 
+     */
+    function loadCriteria() {
+        const groupId = groupDropdown.value;
+        
+        if (groupId) {
+            fetch(`/evaluation/criteria?groupId=${groupId}`)
+                .then(response => response.json())
+                .then(data => {
+                    criterionDropdown.innerHTML = `<option selected disabled>Select a Criterion</option>`;
+                    data.forEach(criterion => {
+                        const option = document.createElement('option');
+                        option.value = criterion.id;
+                        option.textContent = criterion.name;
+                        option.setAttribute('data-type', criterion.type);
+                        criterionDropdown.appendChild(option);
+                    });
+                });
+        }
+    }
+    
+    /**
+     * Loads the evaluation table for the specified criterion.
+     * Enables the user to view and change the evaluation of all teams/students for 
+     * , respectively, a team/individual evaluation.
+     * Calls /evaluation/getCriterionTableTeam
+     */
+    function loadCriterionTable() {    
+        const activityId = document.getElementById('activityId').textContent.trim();
+        const criterionId = criterionDropdown.value;
+        const criterionName = criterionDropdown.options[criterionDropdown.selectedIndex].text; 
+        const criterionType = criterionDropdown.options[criterionDropdown.selectedIndex].dataset.type;
+       
+        // Reinitialization of the other dropdowns 
+        groupSelectAssDropdown.selectedIndex = 0;
+        teamDropdown.selectedIndex = 0;
+        studentDropdown.selectedIndex = 0;
+        
+        if (!criterionId) {
+            alert('Please select a criterion!');
+            return;
+        }
+        
+        const url = criterionType === 'TEAM'
+            ? `/evaluation/getCriterionTableTeam?criterionId=${criterionId}&activityId=${activityId}` 
+            : `/evaluation/getCriterionTableIndividual?criterionId=${criterionId}&activityId=${activityId}`;
+
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest' 
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to load criterion table');
+                }
+                return response.text();
+            })
+            .then(html => {
+                showSendAssessmentButtons('group');
+                document.getElementById('tableName').textContent = "Evaluation of criterion " + criterionName + " - " + criterionType;
+                document.getElementById('tableName').classList.remove("d-none");
+                
+                tableContainer.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error loading criterion table:', error);
+                alert('An error occurred while loading the table.');
+            });
+    }
+    
+    /**
+     * Loads the evaluation table for the specified team.
+     * Enables the user to view and change the evaluation of all criteria of the activity
+     * for the specified team
+     * Calls /evaluation/getTeamTable
+     */
+    function loadTeamTable() {
+        const teamId = teamDropdown.value;
+        const activityId = document.getElementById('activityId').textContent.trim();
+        const teamName = teamDropdown.options[teamDropdown.selectedIndex].text;
+
+        if (!teamId) {
+            alert('Please select a team!');
+            return;
+        }
+        
+        // reset the others dropdowns
+        groupSelectAssDropdown.selectedIndex = 0;
+        studentDropdown.selectedIndex = 0;
+        criterionDropdown.selectedIndex = 0;
+        groupDropdown.selectedIndex = 0;
+
+        const url = `/evaluation/getTeamTable?teamId=${teamId}&activityId=${activityId}`;
+
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest' // Important for fragment rendering
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to load team evaluation table');
+                }
+                return response.text();
+            })
+            .then(html => {
+                showSendAssessmentButtons('team');
+                document.getElementById('tableName').textContent = "Evaluation of Team " + teamName;
+                document.getElementById('tableName').classList.remove("d-none");
+
+                tableContainer.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error loading team table:', error);
+                alert('An error occurred while loading the team evaluation table.');
+            });
+    }
+    
+    /**
+     * Loads the evaluation table for the specified student.
+     * Enables the user to view and change the evaluation of all criteria of the activity
+     * for the specified student
+     * Calls /evaluation/getStudentTable
+     */
+    function loadStudentTable() {
+        const studentId = studentDropdown.value;
+        const activityId = document.getElementById('activityId').textContent.trim();
+        const studentName = studentDropdown.options[studentDropdown.selectedIndex].text;
+
+        if (!studentId) {
+            alert('Please select a student!');
+            return;
+        }
+
+        criterionDropdown.selectedIndex = 0;
+        groupDropdown.selectedIndex = 0;
+        teamDropdown.selectedIndex = 0;
+        groupSelectAssDropdown.selectedIndex = 0;
+
+        const url = `/evaluation/getStudentTable?studentId=${studentId}&activityId=${activityId}`;
+
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest' // Important for fragment rendering
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to load student evaluation table');
+                }
+                return response.text();
+            })
+            .then(html => {
+                showSendAssessmentButtons('student');
+                document.getElementById('tableName').textContent = "Evaluation of Student " + studentName;
+                document.getElementById('tableName').classList.remove("d-none");
+
+                tableContainer.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error loading student table:', error);
+                alert('An error occurred while loading the student evaluation table.');
+            });
+    }
+
+    /**
+     * Updates the changed evaluation in the database
+     * Calls /evaluation/update
+     * 
+     * @param {Long} criteriaId
+     * @param {CriteriaType} type individual or team
+     * @param {Long} evaluationId
+     * @param {Long} teamId
+     * @param {Long} studentId
+     * @param {String} field points or feedback
+     * @param {String} value new points or new feeedback to update
+     * @param {Integer} maxPoints
+     */
+    function updateEvaluation(criteriaId, type, evaluationId, teamId, studentId, field, value, maxPoints) {
+        fetch(`/evaluation/update`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ type, criteriaId, teamId, studentId, evaluationId, field, value, maxPoints })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.newData) {
+                if (criterionDropdown.selectedIndex !== 0) {
+                    loadCriterionTable();
+                } else if (teamDropdown.selectedIndex !== 0) {
+                    loadTeamTable();
+                } else {
+                    loadStudentTable();
+                }                
+            }
+            if (!data.success) {
+                alert('Failed to update evaluation');
+            }
+        });
+    }
+    
+    /**
+     * Verifies if all the mandatory evaluations have been assessed.
+     * Type can be either group, team or student. It verifies the evaluations <br/>
+     * for a group ( all criteria for all teams have been assessed), <br/>
+     * for a team ( all criteria for the team have been assessed), <br/>
+     * for a student ( all criteria for a student have been assessed, including the team evaluations)
+     * @param type - verify evaluation for a group, team or student
+     */
+    function verifyEvaluations(type) {
+        const activityId = document.getElementById('activityId').textContent;
+        let id;
+        let groupId;
+        if (type === 'group') {
+            id = document.getElementById('groupDropdown').value;
+            groupId = id;
+        } else if (type === 'team') {
+            id = document.getElementById('teamDropdown').value;
+            groupId = document.getElementById('groupSelectAssDropdown').value;
+        } else if (type === 'student') {
+            id = document.getElementById('studentDropdown').value;
+            groupId = document.getElementById('groupSelectAssDropdown').value;
+        }
+
+        if (groupId === "-1") {
+            alert(`Please select a group to assess.`);
+            return; 
+        }
+        fetch(`evaluation/verify?type=${type}&id=${id}&activityId=${activityId}&groupId=${groupId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(`Error verifying evaluations:`, data.error);
+                }
+                else if (data.missing.length > 0) {
+                    alert(`The following evaluations are missing:\n\n${data.missing.join('\n')}`);
+                } else {
+                    alert(`${type.charAt(0).toUpperCase() + type.slice(1)} assessments are complete! Assessments sent.`);
+                    // Store data in localStorage
+                    localStorage.setItem("completedIndEval", JSON.stringify(data.completedIndEval));
+                    localStorage.setItem("completedTeamEval", JSON.stringify(data.completedTeamEval));
+                    localStorage.setItem("totalTeamPoints", data.totalTeamPoints);
+                    localStorage.setItem("indPoints", JSON.stringify(data.indPoints));
+
+                    // Open the new page
+                    window.open("/evaluation/mailPreview", "_blank");
+                    
+                }
+            })
+            .catch(error => {
+                console.error('Error verifying evaluations:', error);
+                alert('An error occurred while verifying evaluations.');
+            });
+    }
+    /**
+     * Checks the maximum value of the input field in the tables
+     * @param {Integer} input
+     */
+    function checkMaxValue(input) {
+        const max = parseInt(input.getAttribute('max'));
+        const value = parseInt(input.value);
+        if (value > max) {
+            input.value = max;
+            input.dispatchEvent(new Event('change'));
+        }
+    }
+    
+    /**
+     * When a table is loaded, changes the assessment button.
+     * @param {String} tableType group, team or student
+     */
+    function showSendAssessmentButtons(tableType) {
+        document.getElementById('sendAssessmentGroupBtn').classList.add('d-none');
+        document.getElementById('sendAssessmentTeamBtn').classList.add('d-none');
+        document.getElementById('sendAssessmentStudentBtn').classList.add('d-none');
+        document.getElementById('groupDropdownWrapper').classList.add('d-none');
+
+        if (tableType === 'group') {
+            //document.getElementById('sendAssessmentGroupBtn').classList.remove('d-none');
+        } else if (tableType === 'team') {
+            document.getElementById('sendAssessmentTeamBtn').classList.remove('d-none');
+            document.getElementById('groupDropdownWrapper').classList.remove('d-none');
+        } else if (tableType === 'student') {
+            document.getElementById('sendAssessmentStudentBtn').classList.remove('d-none');
+            document.getElementById('groupDropdownWrapper').classList.remove('d-none');
+        }
+    }
+
+</script>
+</body>
+</html>

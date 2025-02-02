@@ -1,0 +1,35 @@
+<div th:fragment="popupCreateCourse">
+    <!-- Modal -->
+    <div class="modal fade" id="createCourseModal" tabindex="-1" aria-labelledby="createCourseModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <!-- Modal Header -->
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createCourseModalLabel">Create New Course</h5>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="modal-body">
+
+                    <!-- Create a Course Form -->
+                    <form id="createCourseForm" th:action="@{/course/createCourse}" method="post" class="mb-3">
+                        <div class="mb-3">
+                            <label for="courseName" class="form-label">Course Name <span class="text-danger">*</span></label>
+                            <input type="text" id="courseName" name="name" class="form-control" placeholder="Enter course name" required>
+                        </div>
+                    </form>
+                    <p class="text-muted mt-3" style="margin-bottom:-0.5rem">
+                        <span class="text-danger">* mandatory fields</span>
+                    </p>
+                </div>
+
+                <!-- Modal Footer -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" form="createCourseForm">Create</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

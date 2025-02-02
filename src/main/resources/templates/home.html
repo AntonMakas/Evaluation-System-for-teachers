@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=100">
+    <title>FakeVUT</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="/style/home.css">
+    <link rel="stylesheet" type="text/css" href="/style/header.css">
+    <link rel="stylesheet" type="text/css" href="/style/footer.css">
+    <link rel="stylesheet" type="text/css" href="/style/popup.css">
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+<input type="hidden" id="teacherId" th:value="${teacherId}">
+<div class="container">
+    <div id="notification-popup" class="notification-popup hidden">
+        <i id="notification-icon" class=""></i>
+        <span id="notification-message"></span>
+    </div>
+    <h2>Hello, <span id="teacher_name"></span></h2>
+    <div class="buttons">
+        <button id="uploadStudents" class="btn_action" data-bs-toggle="modal" data-bs-target="#uploadStudentModal">
+            Import Students
+        </button>
+        <button id="uploadTeams" class="btn_action" data-bs-toggle="modal" data-bs-target="#uploadTeamsModal">
+            Import Teams
+        </button>
+    </div>
+    <div>
+        <div class="section-title">Your Courses</div>
+        <div class="buttons">
+            <button id="prevCourses" class="btn" aria-label="Previous courses" onclick="prevCourse()">Previous</button>
+            <button id="nextCourses" class="btn" aria-label="Next courses" onclick="nextCourse()">Next</button>
+        </div>
+        <div id="courses-container" class="grid">
+            <!-- Courses will be rendered here dynamically -->
+        </div>
+
+        <div th:replace="fragments/popupCreateCourse :: popupCreateCourse"></div>
+        <div th:replace="fragments/popupRegisterCourse :: popupRegisterCourse"></div>
+        <div th:replace="fragments/uploadStudentFragment :: uploadStudentFragment"></div>
+        <div th:replace="fragments/uploadTeamFragment :: uploadTeamFragment"></div>
+        
+        <div class="buttons">
+            <button id="registerCourseBtn" class="btn_action" data-bs-toggle="modal" data-bs-target="#registerCourseModal">
+                Register to Course
+            </button>
+            <button id="createCourseBtn" class="btn_action" data-bs-toggle="modal" data-bs-target="#createCourseModal">
+                Create Course
+            </button>
+        </div>
+        <div>
+            <div class="section-title">Your Tasks</div>
+            <div class="buttons">
+                <button class="btn" id="prevTasks" aria-label="Previous tasks" onclick="prevTask()" >Previous</button>
+                <button class="btn" id="nextTasks" aria-label="Next tasks" onclick="nextTask()">Next</button>
+            </div>
+            <div id="tasks-container" class="grid_task">
+                <!-- Tasks will be rendered here dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<script th:inline="javascript">
+
+    let currentPageCourses = 0;
+    let coursesData = [];
+    const itemsPerPage = 4;
+    let tasksData = [];
+    const tasksPerPage = 3;
+    let currentPageTasks = 0;
+    
+    //Get logged teacher info by teacherId in session
+    async function fetchLoggedTeacher() {
+        try {
+            const response = await fetch('/getLoggedTeacher', {
+                method: 'GET',
+                headers: {'Content-Type': 'application/json'},
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.status === 'success') {
+                    displayTeacherInfo(data.data);
+                } else {
+                    alert(data.data || 'Failed to fetch teacher info');
+                    window.location.href = '/';
+                }
+            } else if (response.status === 401) {
+                alert('You are not logged in. Redirecting to login page.');
+                window.location.href = '/';
+            }
+        } catch (error) {
+            console.error('Error fetching teacher info:', error);
+            alert('Unable to load teacher info. Please try again.');
+        }
+    }
+
+
+    //Show teacher name in home page
+    function displayTeacherInfo(teacher) {
+        document.getElementById('teacher_name').innerText = teacher.login;
+        fetchCourses(teacher.id);
+        fetchTasks(teacher.id);
+    }
+
+    //Show unregistered courses dynamically
+    document.addEventListener("DOMContentLoaded", function () {
+        const registerCourseModal = document.getElementById("registerCourseModal");
+        registerCourseModal.addEventListener('show.bs.modal', function () {
+            const teacherId = document.getElementById("teacherId").value;
+
+            fetch(`/home/fetchUnregisteredCourse?teacherId=${teacherId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Failed to fetch courses: " + response.statusText);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const courseSelect = document.getElementById("courseSelect");
+                    courseSelect.innerHTML = '<option value="" disabled selected>Select a Course</option>';
+                    data.forEach(course => {
+                        const option = document.createElement("option");
+                        option.value = course.id;
+                        option.textContent = course.name;
+                        courseSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error("Error fetching unregistered courses:", error);
+                    const courseSelect = document.getElementById("courseSelect");
+                    courseSelect.innerHTML = '<option value="" disabled>Error loading courses</option>';
+                });
+        });
+    });
+
+    // Fetch courses data from server
+    async function fetchCourses(teacherid) {
+        if (!teacherid) {
+            console.error('Teacher ID is required');
+            return;
+        }
+        try {
+            const response = await fetch(`/home/fetchCourses?teacherId=${teacherid}`);
+            if (!response.ok) {
+                if (response.status === 404) {
+                    alert('No courses found for this teacher');
+                } else {
+                    alert('An error occurred while fetching courses');
+                }
+                return;
+            }
+            coursesData = await response.json();
+            renderCourses(coursesData);
+        } catch (error) {
+            console.error('Network or server error:', error);
+            alert('Unable to fetch courses due to network issues');
+        }
+    }
+
+
+    // Render courses with pagination
+    function renderCourses(items) {
+        const container = document.getElementById('courses-container');
+        container.innerHTML = '';
+        const start = currentPageCourses * itemsPerPage;
+        const end = start + itemsPerPage;
+        const paginatedItems = items.slice(start, end);
+        paginatedItems.forEach(course => {
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.textContent = course.name;
+            div.addEventListener('click', () => handleCourseClick(course));
+            container.appendChild(div);
+        });
+        document.getElementById('prevCourses').disabled = currentPageCourses === 0;
+        document.getElementById('nextCourses').disabled = end >= items.length;
+    }
+
+    // Fetch tasks data from server
+    async function fetchTasks(teacherid) {
+        try {
+            const response = await fetch(`/home/fetchTasks?teacherId=${teacherid}`);
+            if (!response.ok) throw new Error('Failed to fetch tasks');
+            tasksData = await response.json();
+            renderTasks(tasksData);
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    // Render tasks with pagination
+    function renderTasks(items) {
+        const container = document.getElementById('tasks-container');
+        container.innerHTML = '';
+        const start = currentPageTasks * tasksPerPage;
+        const end = start + tasksPerPage;
+        const paginatedItems = items.slice(start, end);
+        paginatedItems.forEach(task => {
+            const div = document.createElement('div');
+            div.className = 'card';
+            const endDate = new Date(task.endDate).toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+            });
+            div.className = 'card';
+            div.innerHTML = `
+                <div class="task-title">
+                    <strong>Title:</strong> ${task.title}
+                </div>
+                <div class="task-date">
+                    <p><span>🗓️ End Date:</span> ${endDate}</p>
+                </div>
+            `;
+            div.addEventListener('click', () => handleTaskClick(task));
+            container.appendChild(div);
+        });
+        document.getElementById('prevTasks').disabled = currentPageTasks === 0;
+        document.getElementById('nextTasks').disabled = end >= items.length;
+    }
+    // Jump to related course page   
+    function handleTaskClick(task) {
+        window.location.href = `/course/${task.course_id}`;
+    }
+    // Jump to related course page   
+    function handleCourseClick(course) {
+        window.location.href = `/course/${course.id}`;
+    }
+
+    // Pagination for courses
+    function nextCourse() {
+        if ((currentPageCourses + 1) * itemsPerPage < coursesData.length) {
+            currentPageCourses++;
+            renderCourses(coursesData);
+        }
+    }
+
+    function prevCourse() {
+        if (currentPageCourses > 0) {
+            currentPageCourses--;
+            renderCourses(coursesData);
+        }
+    }
+
+    // Pagination for tasks
+    function nextTask() {
+        if ((currentPageTasks + 1) * tasksPerPage < tasksData.length) {
+            currentPageTasks++;
+            renderTasks(tasksData);
+        }
+    }
+
+    function prevTask() {
+        if (currentPageTasks > 0) {
+            currentPageTasks--;
+            renderTasks(tasksData);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchLoggedTeacher();
+        const message = /*[[${notificationMessage}]]*/ '';
+        const type = /*[[${notificationType}]]*/ 'info';
+
+        if (message) {
+            showNotification(message, type);
+        }
+    });
+    function showNotification(message, type = "info") {
+        const popup = document.getElementById('notification-popup');
+        const icon = document.getElementById('notification-icon');
+        const messageSpan = document.getElementById('notification-message');
+
+        // Set content
+        messageSpan.textContent = message;
+
+        // Set styles and ICONS
+        popup.className = `notification-popup visible ${type}`;
+        icon.className = {
+            success: 'bi bi-check-circle',
+            error: 'bi bi-x-circle',
+            info: 'bi bi-info-circle'
+        }[type] || 'bi bi-info-circle';
+
+        // Display popup
+        setTimeout(() => {
+            popup.classList.remove('visible');
+            popup.classList.add('hidden');
+        }, 5000);
+    }
+</script>
+</body>
+</html>

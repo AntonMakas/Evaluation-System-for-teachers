@@ -1,0 +1,37 @@
+<div id="criterionTableContainer" th:fragment="evaluationTableCriteria">
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Points</th>
+                    <th>Max Points</th>
+                    <th>Feedback</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="evaluation : ${evaluationData}">
+                    <td th:text="${evaluation.name}"></td>
+
+                    <td>
+                        <input type="number" class="form-control" 
+                               th:value="${evaluation.pointsObtained != null ? evaluation.pointsObtained : ''}" 
+                               th:placeholder="${evaluation.pointsObtained == null ? 'N/A' : ''}" 
+                               th:max="${evaluation.maxPoints}" 
+                               th:min="0"
+                               oninput="checkMaxValue(this)"
+                               th:onchange="updateEvaluation([[${evaluation.criterionId}]], [[${evaluation.type}]], [[${evaluation.evaluationId}]],[[${evaluation.teamId}]],[[${evaluation.studentId}]], 'points', this.value)">
+                    </td>
+
+                    <td th:text="${evaluation.maxPoints != null ? evaluation.maxPoints : 'N/A'}"></td>
+
+                    <td>
+                        <input type="text" class="form-control" 
+                               th:value="${evaluation.feedback != null ? evaluation.feedback : ''}" 
+                               th:onchange="updateEvaluation([[${evaluation.criterionId}]], [[${evaluation.type}]], [[${evaluation.evaluationId}]], [[${evaluation.teamId}]], [[${evaluation.studentId}]], 'feedback', this.value)">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+    <div th:fragment="addActivityModal">
+        <div class="modal fade" id="addActivityModal" tabindex="-1" aria-labelledby="addActivityModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addActivityModalLabel">Add New Activity</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addActivityForm" th:action="@{/activity/add}" method="post">
+                        <input type="hidden" name="courseId" th:value="${course.id}" />
+
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Activity Name <span class="text-danger">*</span></label>
+                            <input type="text" id="name" name="name" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="type" class="form-label">Activity Type <span class="text-danger">*</span></label>
+                            <select id="type" name="type" class="form-control" required>
+                                <option value="" disabled selected>Select an activity type</option>
+                                <option th:each="type : ${activityTypes}" th:value="${type}" th:text="${type}"></option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="startDate" class="form-label">Start Date <span class="text-danger">*</span></label>
+                            <input type="datetime-local" id="startDate" name="StartDate" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="endDate" class="form-label">End Date <span class="text-danger">*</span></label>
+                            <input type="datetime-local" id="endDate" name="EndDate" class="form-control" required>
+                        </div>
+                        <p class="text-muted mt-3"><span class="text-danger">* mandatory fields</span></p>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary" form="addActivityForm" id="saveActivityButton" disabled>Save Activity</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <div th:fragment="updateActivityModal">
+        <div th:each="activity : ${activities}" class="modal fade" th:id="'updateActivityModal-' + ${activity.id}" tabindex="-1" aria-labelledby="updateActivityModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" th:text="'Edit Activity - ' + ${activity.name}"></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form th:action="@{/activity/edit/{id}(id=${activity.id})}" method="post">
+                            <input type="hidden" name="courseId" th:value="${course.id}" />
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Activity Name</label>
+                                <input type="text"  name="name" class="form-control" th:value="${activity.name}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="type" class="form-label">Activity Type</label>
+                                <select name="type" class="form-control" required>
+                                    <option th:each="type : ${activityTypes}" th:value="${type}" th:text="${type}" th:selected="${type == activity.type}"></option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="startDate" class="form-label">Start Date</label>
+                                <input type="datetime-local"  name="StartDate" class="form-control" th:value="${activity.startDate}">
+                            </div>
+                            <div class="mb-3">
+                                <label for="endDate" class="form-label">End Date</label>
+                                <input type="datetime-local"  name="EndDate" class="form-control" th:value="${activity.endDate}">
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="submit" class="btn btn-primary">Update Activity</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:fragment="criteriaActivityModal">
+        <div th:each="activity : ${activities}" class="modal fade" th:id="'criteriaActivityModal-' + ${activity.id}" tabindex="-1" aria-labelledby="editingActivityModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="criteriaActivityModalLabel">Create Criteria</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Add New Group -->
+                        <div class="section mb-4">
+                            <div class="section-header mb-2">Create New Group</div>
+                            <form th:action="@{/popupEditActivity/add-new-group}" method="post">
+                                <input type="hidden" id="activityId" name="activityId" th:value="${activity.id}">
+                                <div class="mb-3">
+                                    <label for="newGroupName" class="form-label">New Group Name</label>
+                                    <input type="text" id="newGroupName" name="groupName" class="form-control" placeholder="Enter group name" required>
+                                </div>
+                                <button type="submit" class="btn btn-success mt-2">Create Group</button>
+                            </form>
+                        </div>
+
+
+
+
+                        <!-- Create criteria for group Section -->
+                        <div class="section mb-4">
+                            <div class="section-header mb-2">Create criteria for group</div>
+                            <form th:action="@{/popupEditActivity/criteria-evaluation}" method="post">
+                                <div class="mb-3">
+                                    <label for="groupDropdown" class="form-label">Select Group</label>
+                                    <select id="groupDropdown" class="form-select" name="groupId">
+                                        <option th:each="group : ${activityGroupsMap[activity.id]}" th:value="${group.id}" th:text="${group.name}"></option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="newCriteriaName" class="form-label">New Criteria Name</label>
+                                    <input type="text" id="newCriteriaName" name="criteriaName" class="form-control" placeholder="Enter criteria name" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="type" class="form-label">Criteria Type</label>
+                                    <select name="type" class="form-control" required onchange="toggleTeamInputs(this)">
+                                        <option selected disabled>Select a type</option>
+                                        <option th:each="type : ${criteriaTypes}" th:value="${type}" th:text="${type}"></option>
+                                    </select>
+                                </div>
+
+                                <div id="teamInputs" style="display: none;">
+                                    <button type="button" class="btn btn-secondary" id="addRowBtn" onclick="addTeamRow()">+ Add another row</button>
+                                    <div class="team-group mb-3" id="teamGroup1">
+                                        <label for="teamSize1" class="form-label">Team Size</label>
+                                        <input type="number" id="teamSize1" name="teamSize[]" class="form-control" min="1" required>
+                                        <label for="maxPoints1" class="form-label">Max Points</label>
+                                        <input type="number" id="maxPoints1" name="maxPoints[]" class="form-control" min="1" required>
+                                    </div>
+
+                                </div>
+
+                                <button class="btn btn-primary" type="submit">Create Criteria</button>
+                            </form>
+                        </div>
+
+
+                        <div class="section mb-4">
+                            <div class="section-header mb-2">Remove Group</div>
+                            <form th:action="@{/popupEditActivity/remove-group}" method="post">
+                                <div class="mb-3">
+                                    <label for="groupDropdownRemove" class="form-label">Select Group</label>
+                                    <select id="groupDropdownRemove" class="form-select" name="groupId">
+                                        <option th:each="group : ${activityGroupsMap[activity.id]}" th:value="${group.id}" th:text="${group.name}"></option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-danger" type="submit">Remove Group</button>
+                            </form>
+                        </div>
+
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+
+</html>

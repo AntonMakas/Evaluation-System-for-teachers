@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mail Preview</title>
+</head>
+<body>
+    <h1>Evaluation Mail Preview</h1>
+
+    <h3>Individual Evaluations</h3>
+    <div id="completedIndEval"></div>
+
+    <h3>Team Evaluations</h3>
+    <div id="completedTeamEval"></div>
+
+    <h3>Total Team Points</h3>
+    <div id="totalTeamPoints"></div>
+
+    <h3>Individual Points per Student</h3>
+    <div id="individualPoints"></div>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", async function() {
+            const completedIndEval = JSON.parse(localStorage.getItem("completedIndEval"));
+            const completedTeamEval = JSON.parse(localStorage.getItem("completedTeamEval"));
+            const totalTeamPoints = localStorage.getItem("totalTeamPoints");
+            const individualPointsMap = JSON.parse(localStorage.getItem("indPoints"));
+
+            // Display completed individual evaluations line by line
+            const indEvalContainer = document.getElementById("completedIndEval");
+            completedIndEval.forEach(item => {
+                const div = document.createElement("div");
+                div.textContent = item;
+                indEvalContainer.appendChild(div);
+            });
+
+            // Display completed team evaluations line by line
+            const teamEvalContainer = document.getElementById("completedTeamEval");
+            completedTeamEval.forEach(item => {
+                const div = document.createElement("div");
+                div.textContent = item;
+                teamEvalContainer.appendChild(div);
+            });
+
+            // Display total team points
+            document.getElementById("totalTeamPoints").textContent = totalTeamPoints;
+            const individualPointsContainer = document.getElementById("individualPoints");
+            for (const studentId in individualPointsMap) {
+                const response = await fetch(`/student/get/${studentId}`);
+                const data = await response.json();
+                const div = document.createElement("div");
+                console.log(data);
+                div.textContent = `Student : ${data.fullName} - Points: ${individualPointsMap[studentId]}`;
+                individualPointsContainer.appendChild(div);
+            }
+        });
+    </script>
+</body>
+</html>
